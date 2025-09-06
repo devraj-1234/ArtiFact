@@ -1,0 +1,21 @@
+# ArtifactVision - Art Restoration and Forgery Detection
+# Requirements
+
+# Core packages
+numpy>=1.20.0
+matplotlib>=3.3.0
+opencv-python>=4.5.0
+scikit-learn>=0.24.0
+scikit-image>=0.18.0
+tqdm>=4.50.0
+scipy>=1.6.0
+pillow>=8.0.0
+joblib>=1.0.0
+
+# Deep learning packages (for restoration)
+tensorflow>=2.4.0
+keras>=2.4.0
+
+# Jupyter (for notebooks)
+jupyter>=1.0.0
+ipykernel>=6.0.0
