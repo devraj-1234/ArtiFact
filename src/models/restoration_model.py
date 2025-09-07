@@ -6,10 +6,13 @@ Artifact restoration model using deep learning.
 import os
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Input, Conv2D, MaxPooling2D, UpSampling2D, concatenate
-from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
+import keras
+from keras.layers import Input, Conv2D, MaxPooling2D, UpSampling2D, concatenate
+from keras.models import Model
+#from tensorflow.keras.layers import Input, Conv2D, MaxPooling2D, UpSampling2D, concatenate
+from keras import Adam
+from keras.callbacks import ModelCheckpoint, EarlyStopping
+import cv2
 
 
 def unet_model(input_size=(256, 256, 3)):
