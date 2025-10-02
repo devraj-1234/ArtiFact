@@ -19,3 +19,7 @@ keras>=2.4.0
 # Jupyter (for notebooks)
 jupyter>=1.0.0
 ipykernel>=6.0.0
+ipywidgets>=7.6.0
+
+# Optional packages for advanced features
+PyWavelets>=1.1.1  # For wavelet-based denoising

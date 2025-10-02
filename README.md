@@ -1,67 +1,163 @@
 # ArtifactVision: Art Restoration and Forgery Detection
 
-A computer vision project for artifact restoration and forgery detection using OpenCV, FFT analysis, and machine learning.
+A comprehensive computer vision project for artifact restoration and forgery detection using classical image processing, FFT analysis, wavelets, and machine learning.
 
 ## Project Overview
 
-ArtifactVision uses frequency domain analysis and machine learning to:
+ArtifactVision provides a complete toolkit for artwork restoration and analysis:
 
-1. **Restore damaged artwork** using advanced image processing and deep learning
+1. **Restore damaged artwork** using both classical and advanced image processing techniques
 2. **Detect art forgeries** by analyzing frequency domain features
+3. **Interactive experimentation** with Jupyter notebooks for real-time parameter tuning
 
-The project leverages Fast Fourier Transform (FFT) to extract features from the frequency domain of artwork images, which can reveal patterns not visible in the spatial domain.
+The project implements multiple restoration approaches:
+- **Classical Methods**: Denoising, enhancement, sharpening, inpainting
+- **Advanced Techniques**: FFT filtering, wavelet transforms, anisotropic diffusion, automatic damage detection
+- **Deep Learning**: (Coming soon) U-Net and GAN-based restoration
+
+## Features
+
+### Classical Image Restoration
+- **Denoising**: Gaussian, bilateral filtering, non-local means
+- **Enhancement**: CLAHE, histogram equalization
+- **Damage Removal**: Morphological operations, scratch removal
+- **Inpainting**: OpenCV Telea and Navier-Stokes methods
+- **Sharpening**: Unsharp masking with threshold control
+
+### Advanced Image Restoration
+- **FFT-Based Filtering**: Frequency domain noise removal and periodic noise elimination
+- **Wavelet Denoising**: Multi-scale decomposition using PyWavelets
+- **Automatic Damage Detection**: Edge-based, brightness-based, and combined methods
+- **Advanced Inpainting**: Exemplar-based with auto-detected masks
+- **Anisotropic Diffusion**: Edge-preserving smoothing
+- **Color Correction**: White balance and histogram matching
+- **Multi-Scale Processing**: Gaussian pyramid-based restoration
+
+### Interactive Tools
+- Real-time parameter tuning with ipywidgets
+- Side-by-side comparison (Damaged | Restored | Ground Truth)
+- Quality metrics (PSNR, SSIM) with improvement tracking
+- Multiple interactive notebooks for experimentation
 
 ## Directory Structure
 
 ```
 image_processing/
 ├── data/
-│   ├── raw/                      # Raw artwork dataset
+│   ├── raw/                                  # Raw artwork dataset
 │   │   └── AI_for_Art_Restoration_2/
-│   │       ├── paired_dataset_art/
-│   │       │   ├── damaged/      # Damaged artwork images
-│   │       │   └── undamaged/    # Original/undamaged artwork images
-│   └── processed/                # Processed data for model training
+│   │       └── paired_dataset_art/
+│   │           ├── damaged/                  # Damaged artwork images
+│   │           └── undamaged/                # Original/undamaged artwork
+│   └── processed/                            # Processed data for training
 ├── notebooks/
-│   ├── explore_datasets.ipynb    # Data exploration notebook
-│   └── fft_art_analysis.ipynb    # FFT analysis of art images
+│   ├── image_restoration_tutorial.ipynb      # Beginner-friendly tutorial
+│   ├── advanced_restoration_techniques.ipynb # Advanced methods (NEW!)
+│   ├── explore_datasets.ipynb                # Data exploration
+│   ├── fft_art_analysis.ipynb                # FFT analysis
+│   └── beginners_guide_to_fft.ipynb          # FFT introduction
 ├── outputs/
-│   ├── figures/                  # Output visualizations
-│   └── models/                   # Saved model files
+│   ├── figures/                              # Output visualizations
+│   └── models/                               # Saved model files
 └── src/
-    ├── data/                     # Data loading and preprocessing
-    │   └── dataset.py            # Dataset class
-    ├── exp/                      # Experimental code
-    │   └── fft_pipeline.py       # FFT analysis pipeline
-    ├── main/                     # Main application code
-    │   └── main.py               # Command-line interface
-    ├── models/                   # ML models
-    │   ├── detection_model.py    # Forgery detection model
-    │   └── restoration_model.py  # Image restoration model
-    ├── training/                 # Training scripts
-    │   ├── train_detection.py    # Train forgery detection model
-    │   └── train_restoration.py  # Train restoration model
-    └── utils/                    # Utility functions
-        ├── feature_extraction.py # Feature extraction utilities
-        └── visualization.py      # Visualization utilities
+    └── basics/
+        ├── basic_fft.py                      # FFT operations
+        ├── basic_restoration.py              # Classical restoration
+        ├── advanced_restoration.py           # Advanced techniques (NEW!)
+        ├── feature_extractor.py              # Feature extraction
+        └── image_analyzer.py                 # Image analysis
 ```
 
 ## Installation
 
 1. Clone the repository:
-
-```
+```bash
 git clone https://github.com/yourusername/artifact-vision.git
 cd artifact-vision
 ```
 
-2. Install dependencies:
-
+2. Install the package in editable mode:
+```bash
+pip install -e .
 ```
-pip install -r requirements.txt
+
+3. Install optional dependencies for advanced features:
+```bash
+pip install PyWavelets  # For wavelet-based denoising
+pip install scikit-image  # For SSIM metric
 ```
 
-## Usage
+## Quick Start
+
+### Using Jupyter Notebooks (Recommended for Beginners)
+
+1. **Basic Tutorial**: Start with `notebooks/image_restoration_tutorial.ipynb`
+   - Learn classical restoration techniques
+   - Interactive parameter tuning
+   - Real-time quality metrics
+
+2. **Advanced Techniques**: Explore `notebooks/advanced_restoration_techniques.ipynb`
+   - FFT-based noise removal
+   - Wavelet denoising
+   - Automatic damage detection
+   - Anisotropic diffusion
+   - Complete advanced pipeline
+
+3. **FFT Analysis**: Check `notebooks/beginners_guide_to_fft.ipynb`
+   - Introduction to Fourier transforms
+   - Frequency domain visualization
+
+### Using Python API
+
+```python
+from src.basics.basic_restoration import (
+    denoise_bilateral,
+    enhance_clahe,
+    sharpen_image,
+    restore_image
+)
+from src.basics.advanced_restoration import (
+    fft_denoise,
+    wavelet_denoise,
+    auto_detect_damage_mask,
+    exemplar_inpaint,
+    anisotropic_diffusion
+)
+import cv2
+
+# Load image
+img = cv2.imread('damaged_art.jpg')
+
+# Basic restoration
+restored_basic = restore_image(img, techniques=['denoise', 'enhance', 'sharpen'])
+
+# Advanced restoration
+restored_advanced = fft_denoise(img, threshold_percentile=90)
+restored_advanced = anisotropic_diffusion(restored_advanced, iterations=10)
+
+# Auto inpainting
+mask = auto_detect_damage_mask(img, method='combined')
+restored_advanced = exemplar_inpaint(restored_advanced, mask)
+
+# Save result
+cv2.imwrite('restored_art.jpg', restored_advanced)
+```
+
+## Restoration Techniques Comparison
+
+| Technique | Best For | Speed | Quality |
+|-----------|----------|-------|---------|
+| Gaussian Denoising | General noise | ⚡⚡⚡ | ⭐⭐ |
+| Bilateral Filter | Edge-preserving smoothing | ⚡⚡ | ⭐⭐⭐ |
+| Non-Local Means | Texture preservation | ⚡ | ⭐⭐⭐⭐ |
+| FFT Denoising | High-frequency noise | ⚡⚡ | ⭐⭐⭐⭐ |
+| Wavelet Denoising | Multi-scale features | ⚡⚡ | ⭐⭐⭐⭐⭐ |
+| Anisotropic Diffusion | Edge preservation | ⚡ | ⭐⭐⭐⭐ |
+| Auto Inpainting | Scratches, damage | ⚡⚡ | ⭐⭐⭐⭐ |
+| Color Correction | Color fading | ⚡⚡⚡ | ⭐⭐⭐ |
+| Multi-Scale | Complex damage | ⚡ | ⭐⭐⭐⭐⭐ |
+
+## Usage Examples
 
 ### Restoration
 
