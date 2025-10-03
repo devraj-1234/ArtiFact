@@ -1,0 +1,23 @@
+{
+  "model_name": "SVM",
+  "test_accuracy": 52.17391304347826,
+  "features": [
+    "mean",
+    "std_dev",
+    "skewness",
+    "kurtosis",
+    "low_freq_energy",
+    "high_freq_energy",
+    "energy_ratio",
+    "radial_center",
+    "radial_25",
+    "radial_50",
+    "radial_75",
+    "radial_edge",
+    "color_balance_need",
+    "sharpening_need"
+  ],
+  "n_features": 14,
+  "n_training_samples": 182,
+  "n_testing_samples": 46
+}
