@@ -30,7 +30,14 @@ try:
     DL_AVAILABLE = True
 except ImportError:
     DL_AVAILABLE = False
-    print('⚠️ Deep learning models not available (TensorFlow not installed)')
+    print('Warning: Deep learning models not available (TensorFlow not installed)')
+
+try:
+    from src.dl.realesrgan_wrapper import RealESRGANRestorer, GFPGANRestorer
+    REALESRGAN_AVAILABLE = True
+except ImportError:
+    REALESRGAN_AVAILABLE = False
+    print('Warning: Real-ESRGAN not available (install with: pip install realesrgan)')
 
 
 class HybridRestorer:
@@ -45,7 +52,9 @@ class HybridRestorer:
                  ml_model_path='outputs/models/restoration_parameter_predictor.pkl',
                  ml_scaler_path='outputs/models/parameter_feature_scaler.pkl',
                  dl_model_path=None,
-                 use_dl=True):
+                 use_dl=True,
+                 use_realesrgan=True,
+                 realesrgan_model='RealESRGAN_x4plus'):
         """
         Initialize hybrid restoration system.
         
@@ -53,27 +62,40 @@ class HybridRestorer:
             ml_model_path: Path to ML parameter prediction model
             ml_scaler_path: Path to feature scaler
             dl_model_path: Path to U-Net model weights (optional)
-            use_dl: Whether to use DL for severe damage (requires TensorFlow)
+            use_dl: Whether to use U-Net for severe damage
+            use_realesrgan: Whether to use Real-ESRGAN (recommended)
+            realesrgan_model: Real-ESRGAN model variant
         """
         # Load ML model
         self.ml_model = joblib.load(ml_model_path)
         self.scaler = joblib.load(ml_scaler_path)
-        print(f'✅ Loaded ML model from {ml_model_path}')
+        print(f'Loaded ML model from {ml_model_path}')
         
-        # Load DL model if requested and available
+        # Load Real-ESRGAN (preferred for production)
+        self.realesrgan_restorer = None
+        if use_realesrgan and REALESRGAN_AVAILABLE:
+            try:
+                self.realesrgan_restorer = RealESRGANRestorer(
+                    model_name=realesrgan_model,
+                    device='cuda'
+                )
+                print(f'Loaded Real-ESRGAN model: {realesrgan_model}')
+            except Exception as e:
+                print(f'Warning: Could not load Real-ESRGAN: {e}')
+                self.realesrgan_restorer = None
+        
+        # Load U-Net DL model (fallback)
         self.use_dl = use_dl and DL_AVAILABLE
         if self.use_dl:
             if dl_model_path and os.path.exists(dl_model_path):
                 self.dl_restorer = UNetRestorer(model_path=dl_model_path)
-                print(f'✅ Loaded DL model from {dl_model_path}')
+                print(f'Loaded U-Net model from {dl_model_path}')
             else:
                 self.dl_restorer = None
                 self.use_dl = False
-                print('⚠️ DL model not found, using ML-guided classical methods only')
+                print('Warning: U-Net model not found')
         else:
             self.dl_restorer = None
-            if not DL_AVAILABLE:
-                print('💡 Install TensorFlow to enable deep learning restoration')
         
         # Thresholds for damage severity
         self.severe_damage_threshold = 0.7  # Sharpening need > 0.7 = severe
@@ -191,8 +213,34 @@ class HybridRestorer:
         return restored, info
     
     def _restore_with_dl(self, image):
-        """Apply deep learning restoration"""
-        return self.dl_restorer.restore(image)
+        """Apply deep learning restoration - prefers Real-ESRGAN if available"""
+        # Try Real-ESRGAN first (best quality)
+        if self.realesrgan_restorer is not None:
+            try:
+                restored = self.realesrgan_restorer.restore(
+                    image,
+                    outscale=1.0,
+                    face_enhance=False
+                )
+                return restored
+            except Exception as e:
+                print(f'Real-ESRGAN failed: {e}, falling back to U-Net')
+        
+        # Fallback to U-Net
+        if self.dl_restorer is not None:
+            return self.dl_restorer.restore(image)
+        
+        # Final fallback to ML-guided
+        print('Warning: No DL models available, using ML-guided restoration')
+        features, _ = extract_ml_features(image)
+        features_scaled = self.scaler.transform(features.reshape(1, -1))
+        predicted_params = self.ml_model.predict(features_scaled)[0]
+        params = {
+            'apply_color_correction': round(predicted_params[0]),
+            'sharpen_sigma': predicted_params[1],
+            'sharpen_strength': predicted_params[2]
+        }
+        return self._restore_with_ml(image, params)
     
     def _restore_with_ml(self, image, params):
         """Apply ML-guided classical restoration"""

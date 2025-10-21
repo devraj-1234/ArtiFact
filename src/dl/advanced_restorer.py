@@ -49,7 +49,7 @@ class StructuralDamageDetector:
         
         if lines is not None:
             for line in lines:
-                x1, y1, x2, x2 = line[0]
+                x1, y1, x2, y2 = line[0]
                 # Calculate line properties
                 length = np.sqrt((x2-x1)**2 + (y2-y1)**2)
                 angle = np.arctan2(y2-y1, x2-x1) * 180 / np.pi
