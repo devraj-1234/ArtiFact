@@ -1,5 +1,13 @@
 /venv
 /.vscode
+*.venv/
+venv/
+__pycache__/
+*.pth
+*.onnx
+outputs/
+*.pyc
+.vscode/
 #/src/basics
 #/notebooks/beginners_guide_to_fft.ipynb
 #/notebooks/image_restoration_tutorial.ipynb
