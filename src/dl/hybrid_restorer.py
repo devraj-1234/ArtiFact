@@ -33,7 +33,7 @@ except ImportError:
     print('Warning: Deep learning models not available (TensorFlow not installed)')
 
 try:
-    from src.dl.realesrgan_wrapper import RealESRGANRestorer, GFPGANRestorer
+    from src.dl.realesrgan_wrapper import RealESRGANRestorer
     REALESRGAN_AVAILABLE = True
 except ImportError:
     REALESRGAN_AVAILABLE = False
@@ -188,20 +188,20 @@ class HybridRestorer:
         # Apply restoration
         if method == 'deep_learning':
             restored = self._restore_with_dl(image)
-            print(f'🔬 Applied deep learning restoration (severity: {damage_analysis["severity"]})')
+            print(f'Applied deep learning restoration (severity: {damage_analysis["severity"]})')
         
         elif method == 'ml_guided':
             restored = self._restore_with_ml(image, damage_analysis['predicted_params'])
-            print(f'🤖 Applied ML-guided restoration (severity: {damage_analysis["severity"]})')
+            print(f'Applied ML-guided restoration (severity: {damage_analysis["severity"]})')
         
         else:  # classical
             restored = self._restore_classical(image, damage_analysis)
-            print(f'⚡ Applied fast classical restoration (severity: {damage_analysis["severity"]})')
+            print(f'Applied fast classical restoration (severity: {damage_analysis["severity"]})')
         
         # Save if output path provided
         if output_path:
             cv2.imwrite(output_path, restored)
-            print(f'✅ Saved restored image to {output_path}')
+            print(f'Saved restored image to {output_path}')
         
         # Prepare restoration info
         info = {
@@ -298,7 +298,7 @@ class HybridRestorer:
         pattern = os.path.join(input_dir, file_pattern)
         files = glob.glob(pattern)
         
-        print(f'📂 Found {len(files)} images to restore')
+        print(f'Found {len(files)} images to restore')
         print('='*70)
         
         results = []
@@ -318,7 +318,7 @@ class HybridRestorer:
                     'output_path': output_path
                 })
             except Exception as e:
-                print(f'❌ Error processing {filename}: {e}')
+                print(f'Error processing {filename}: {e}')
                 results.append({
                     'filename': filename,
                     'success': False,
@@ -328,9 +328,9 @@ class HybridRestorer:
         # Summary
         print()
         print('='*70)
-        print('📊 Batch Restoration Summary:')
+        print('Batch Restoration Summary:')
         successful = sum(1 for r in results if r['success'])
-        print(f'✅ Successfully restored: {successful}/{len(files)} images')
+        print(f'Successfully restored: {successful}/{len(files)} images')
         
         if successful > 0:
             methods = {}
@@ -380,7 +380,7 @@ def demo_hybrid_system():
     """
     Demo function to show hybrid system capabilities.
     """
-    print('🎨 Hybrid ML + DL Restoration System Demo')
+    print('Hybrid ML + DL Restoration System Demo')
     print('='*70)
     
     # Initialize hybrid restorer
@@ -400,13 +400,13 @@ def demo_hybrid_system():
             strategy='auto'
         )
         
-        print('\n📊 Restoration Info:')
+        print('\nRestoration Info:')
         print(f"Method used: {info['method']}")
         print(f"Damage severity: {info['damage_analysis']['severity']}")
         print(f"Sharpening need: {info['damage_analysis']['sharpening_need']:.3f}")
         print(f"Color balance need: {info['damage_analysis']['color_balance_need']:.3f}")
     else:
-        print(f'⚠️ Test image not found: {test_image}')
+        print(f'Test image not found: {test_image}')
 
 
 if __name__ == '__main__':

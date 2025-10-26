@@ -11,6 +11,7 @@ import numpy as np
 import warnings
 from pathlib import Path
 from typing import Optional, Tuple, List
+import torch
 
 # Warn about NumPy 2.x (Real-ESRGAN stack prefers NumPy < 2)
 try:
@@ -93,6 +94,46 @@ def ensure_realesrgan_weights(model_name: str, dst_dir: str | Path) -> str:
     )
 
 
+class RealESRGANWrapper:
+    """
+    A simplified wrapper for the RealESRGANRestorer.
+    This provides a consistent class name as expected by other scripts.
+    """
+    def __init__(self, model_str='x4', **kwargs):
+        """
+        Initializes the Real-ESRGAN restorer.
+
+        Args:
+            model_str (str): The model string, e.g., 'x4', 'x2', 'anime'.
+            **kwargs: Additional arguments for RealESRGANRestorer.
+        """
+        model_name_map = {
+            'x4': 'RealESRGAN_x4plus',
+            'x2': 'RealESRGAN_x2plus',
+            'anime': 'RealESRGAN_x4plus_anime_6B'
+        }
+        model_name = model_name_map.get(model_str, 'RealESRGAN_x4plus')
+        
+        # Automatically determine device
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+
+        self.restorer = RealESRGANRestorer(model_name=model_name, device=device, **kwargs)
+
+    def restore(self, image: np.ndarray, outscale: float = 1.0) -> Tuple[np.ndarray, None]:
+        """
+        Enhance an image.
+
+        Args:
+            image (np.ndarray): Input image in BGR uint8 format.
+            outscale (float): The final upsampling scale of the image.
+
+        Returns:
+            A tuple containing the restored image and None.
+        """
+        restored_image = self.restorer.restore(image, outscale=outscale)
+        return restored_image, None
+
+
 class RealESRGANRestorer:
     """
     Wrapper for Real-ESRGAN pre-trained models.
@@ -157,7 +198,7 @@ class RealESRGANRestorer:
         if image is None or not isinstance(image, np.ndarray):
             raise ValueError("Input image must be a non-empty numpy array (BGR, uint8)")
         output, _ = self.upsampler.enhance(img=image, outscale=outscale)
-        return output
+        return output, _
 
     def restore_file(
         self,
