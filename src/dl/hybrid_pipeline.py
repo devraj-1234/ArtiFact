@@ -10,12 +10,13 @@ import numpy as np
 from PIL import Image
 import os
 import cv2
+import segmentation_models_pytorch as smp
+from gfpgan import GFPGANer
 
 # Make sure the project root is in the Python path
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-from src.dl.pytorch_unet import UNet
 from src.dl.realesrgan_wrapper import RealESRGANRestorer
 from torchvision import transforms
 
@@ -39,7 +40,13 @@ class HybridPipeline:
 
         # --- Load U-Net Model ---
         print(f"Loading U-Net model from {unet_model_path}...")
-        self.unet = UNet(n_channels=3, n_classes=3)
+        self.unet = smp.Unet(
+            encoder_name="resnet34",
+            encoder_weights=None, # No need to load weights here, will be loaded from state_dict
+            in_channels=3,
+            classes=3,
+            activation='sigmoid'
+        )
         self.unet.load_state_dict(torch.load(unet_model_path, map_location=self.device))
         self.unet.to(self.device)
         self.unet.eval()
@@ -56,6 +63,17 @@ class HybridPipeline:
         self.realesrgan = RealESRGANRestorer(model_name=model_name, device=self.device)
         print("Real-ESRGAN model loaded successfully.")
 
+        # --- Load GFPGAN Model ---
+        print("Loading GFPGAN for face enhancement...")
+        self.gfpgan = GFPGANer(
+            model_path='https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.3.pth',
+            upscale=4, # Corresponds to RealESRGAN's scale
+            arch='clean',
+            channel_multiplier=2,
+            bg_upsampler=None # We use RealESRGAN for background
+        )
+        print("GFPGAN model loaded successfully.")
+
         # --- Define transformations for U-Net ---
         self.transform = transforms.Compose([
             transforms.ToTensor(),
@@ -63,11 +81,8 @@ class HybridPipeline:
 
     def restore_image(self, image_path, output_path):
         """
-        Applies the full 2-step restoration pipeline to a single image.
-
-        Args:
-            image_path (str): Path to the input (damaged) image.
-            output_path (str): Path to save the final restored image.
+        Applies the full 3-step restoration pipeline to a single image.
+        U-Net -> Real-ESRGAN -> GFPGAN
         """
         print(f"Processing {image_path}...")
         img = Image.open(image_path).convert("RGB")
@@ -75,19 +90,22 @@ class HybridPipeline:
         # --- Step 1: U-Net for Color/Light Correction ---
         print("Step 1: Applying U-Net for color and light correction...")
         with torch.no_grad():
-            # Prepare image for U-Net
             input_tensor = self.transform(img).unsqueeze(0).to(self.device)
-            
-            # Run U-Net
             unet_output_tensor = self.unet(input_tensor)
-            
-            # Convert U-Net output back to a NumPy array (HWC, BGR) for Real-ESRGAN
             unet_output_img = self.tensor_to_cv2(unet_output_tensor)
 
         # --- Step 2: Real-ESRGAN for Detail Enhancement ---
         print("Step 2: Applying Real-ESRGAN for detail enhancement...")
-        # Real-ESRGAN wrapper expects a CV2 image (NumPy array, BGR)
-        final_output, _ = self.realesrgan.restore(unet_output_img)
+        realesrgan_output, _ = self.realesrgan.restore(unet_output_img)
+
+        # --- Step 3: GFPGAN for Face Enhancement ---
+        print("Step 3: Applying GFPGAN for face polishing...")
+        _, _, final_output = self.gfpgan.enhance(
+            realesrgan_output, 
+            has_aligned=False, 
+            only_center_face=False, 
+            paste_back=True
+        )
 
         # --- Save the final image ---
         cv2.imwrite(output_path, final_output)
@@ -106,10 +124,10 @@ class HybridPipeline:
 def main():
     """Example usage of the HybridPipeline."""
     # --- Configuration ---
-    UNET_MODEL = "outputs/models/unet/best_unet_model.pth"
-    REALESRGAN_MODEL = "x4" # Use 'x4' for 4x upscaling, or 'x2' for 2x
+    UNET_MODEL = "outputs/models/unet/best_unet_resnet34_perceptual.pth"
+    REALESRGAN_MODEL = "x4"
     INPUT_IMAGE = "data/raw/AI_for_Art_Restoration_2/paired_dataset_art/damaged/2.jpg"
-    OUTPUT_DIR = "outputs/hybrid_restored"
+    OUTPUT_DIR = "outputs/hybrid_restored_v2"
     
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     

@@ -12,12 +12,13 @@ from torch.utils.data import DataLoader
 import os
 from tqdm import tqdm
 import logging
+import segmentation_models_pytorch as smp
 
 # Make sure the project root is in the Python path
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-from src.dl.pytorch_unet import UNet
+from src.dl.perceptual_loss import PerceptualLoss
 from src.data.pytorch_dataset import get_dataloaders
 
 # --- Configuration ---
@@ -31,6 +32,9 @@ EPOCHS = 100
 LEARNING_RATE = 1e-4
 VAL_SPLIT = 0.2
 IMG_SIZE = (256, 256)
+# Loss weights
+L1_WEIGHT = 0.8
+PERCEPTUAL_WEIGHT = 0.2
 
 # --- Setup Logging ---
 os.makedirs(LOGS_DIR, exist_ok=True)
@@ -38,7 +42,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(os.path.join(LOGS_DIR, "training.log")),
+        logging.FileHandler(os.path.join(LOGS_DIR, "training_perceptual.log")),
         logging.StreamHandler()
     ]
 )
@@ -63,16 +67,26 @@ def train_model():
     logging.info(f"Training samples: {len(train_loader.dataset)}, Validation samples: {len(val_loader.dataset)}")
 
     # --- Model, Optimizer, Loss ---
-    logging.info("Initializing model...")
-    model = UNet(n_channels=3, n_classes=3).to(device)
+    logging.info("Initializing ResNet34-UNet model...")
+    # Using a pre-trained ResNet34 encoder for better feature extraction
+    model = smp.Unet(
+        encoder_name="resnet34",
+        encoder_weights="imagenet",
+        in_channels=3,
+        classes=3,
+        activation='sigmoid' # Output values between 0 and 1
+    ).to(device)
     
     optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
-    criterion = nn.L1Loss() # L1 Loss (Mean Absolute Error) is often good for image restoration
+    
+    # Define the loss functions
+    l1_criterion = nn.L1Loss().to(device)
+    perceptual_criterion = PerceptualLoss(device=device)
     
     best_val_loss = float('inf')
 
     # --- Training Loop ---
-    logging.info("Starting training...")
+    logging.info("Starting training with combined L1 and Perceptual loss...")
     for epoch in range(EPOCHS):
         model.train()
         running_loss = 0.0
@@ -87,14 +101,18 @@ def train_model():
 
             # Forward pass
             outputs = model(damaged_imgs)
-            loss = criterion(outputs, undamaged_imgs)
+            
+            # Calculate combined loss
+            l1_loss = l1_criterion(outputs, undamaged_imgs)
+            perceptual_loss = perceptual_criterion(outputs, undamaged_imgs)
+            total_loss = (L1_WEIGHT * l1_loss) + (PERCEPTUAL_WEIGHT * perceptual_loss)
 
             # Backward pass and optimize
-            loss.backward()
+            total_loss.backward()
             optimizer.step()
 
-            running_loss += loss.item()
-            progress_bar.set_postfix(loss=loss.item())
+            running_loss += total_loss.item()
+            progress_bar.set_postfix(loss=total_loss.item(), l1=l1_loss.item(), percep=perceptual_loss.item())
 
         avg_train_loss = running_loss / len(train_loader)
         logging.info(f"Epoch {epoch+1} - Average Training Loss: {avg_train_loss:.6f}")
@@ -109,9 +127,14 @@ def train_model():
                 undamaged_imgs = undamaged_imgs.to(device)
                 
                 outputs = model(damaged_imgs)
-                loss = criterion(outputs, undamaged_imgs)
-                val_loss += loss.item()
-                progress_bar_val.set_postfix(loss=loss.item())
+                
+                # Calculate combined validation loss
+                l1_val_loss = l1_criterion(outputs, undamaged_imgs)
+                perceptual_val_loss = perceptual_criterion(outputs, undamaged_imgs)
+                total_val_loss = (L1_WEIGHT * l1_val_loss) + (PERCEPTUAL_WEIGHT * perceptual_val_loss)
+                
+                val_loss += total_val_loss.item()
+                progress_bar_val.set_postfix(loss=total_val_loss.item())
 
         avg_val_loss = val_loss / len(val_loader)
         logging.info(f"Epoch {epoch+1} - Average Validation Loss: {avg_val_loss:.6f}")
@@ -119,7 +142,7 @@ def train_model():
         # --- Save Best Model ---
         if avg_val_loss < best_val_loss:
             best_val_loss = avg_val_loss
-            model_path = os.path.join(MODEL_SAVE_DIR, "best_unet_model.pth")
+            model_path = os.path.join(MODEL_SAVE_DIR, "best_unet_resnet34_perceptual.pth")
             torch.save(model.state_dict(), model_path)
             logging.info(f"New best model saved to {model_path} with validation loss: {avg_val_loss:.6f}")
 
