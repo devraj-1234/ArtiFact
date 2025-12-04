@@ -60,7 +60,7 @@ class HybridPipeline:
             'anime': 'RealESRGAN_x4plus_anime_6B'
         }
         model_name = model_name_map.get(realesrgan_model_str, 'RealESRGAN_x4plus')
-        self.realesrgan = RealESRGANRestorer(model_name=model_name, device=self.device)
+        self.realesrgan = RealESRGANRestorer(model_name=model_name, device=self.device, tile = 256, half=True)
         print("Real-ESRGAN model loaded successfully.")
 
         # --- Load GFPGAN Model ---
@@ -79,37 +79,61 @@ class HybridPipeline:
             transforms.ToTensor(),
         ])
 
-    def restore_image(self, image_path, output_path):
+    def restore_image(self, image: Image.Image, output_dir: str = None, img_name: str = "restored.png"):
         """
         Applies the full 3-step restoration pipeline to a single image.
         U-Net -> Real-ESRGAN -> GFPGAN
-        """
-        print(f"Processing {image_path}...")
-        img = Image.open(image_path).convert("RGB")
         
+        Args:
+            image (PIL.Image.Image): The input image.
+            output_dir (str, optional): Directory to save intermediate and final results. Defaults to None.
+            img_name (str, optional): The base name for saved files. Defaults to "restored.png".
+
+        Returns:
+            PIL.Image.Image: The final restored image.
+        """
+        print(f"Processing {img_name}...")
+        
+        # The input is already a PIL image, no need to open it.
+        img = image.copy()
+
         # --- Step 1: U-Net for Color/Light Correction ---
         print("Step 1: Applying U-Net for color and light correction...")
         with torch.no_grad():
             input_tensor = self.transform(img).unsqueeze(0).to(self.device)
             unet_output_tensor = self.unet(input_tensor)
-            unet_output_img = self.tensor_to_cv2(unet_output_tensor)
+        
+        # Convert U-Net output tensor to a BGR cv2 image for the next steps
+        unet_output_bgr = self.tensor_to_cv2(unet_output_tensor)
+        
+        if output_dir:
+            unet_output_path = os.path.join(output_dir, f"unet_{img_name}")
+            cv2.imwrite(unet_output_path, unet_output_bgr)
+            print(f"Saved U-Net output to {unet_output_path}")
 
-        # --- Step 2: Real-ESRGAN for Detail Enhancement ---
+        # --- Step 2: Real-ESRGAN for Upscaling and Detail ---
         print("Step 2: Applying Real-ESRGAN for detail enhancement...")
-        realesrgan_output, _ = self.realesrgan.restore(unet_output_img)
+        realesrgan_output_bgr, _ = self.realesrgan.restore(unet_output_bgr)
+        
+        if output_dir:
+            realesrgan_output_path = os.path.join(output_dir, f"realesrgan_{img_name}")
+            cv2.imwrite(realesrgan_output_path, realesrgan_output_bgr)
+            print(f"Saved Real-ESRGAN output to {realesrgan_output_path}")
 
-        # --- Step 3: GFPGAN for Face Enhancement ---
+        # --- Step 3: GFPGAN for Face Polishing ---
         print("Step 3: Applying GFPGAN for face polishing...")
-        _, _, final_output = self.gfpgan.enhance(
-            realesrgan_output, 
-            has_aligned=False, 
-            only_center_face=False, 
-            paste_back=True
+        _, _, final_output_bgr = self.gfpgan.enhance(
+            realesrgan_output_bgr, has_aligned=False, only_center_face=False, paste_back=True
         )
 
-        # --- Save the final image ---
-        cv2.imwrite(output_path, final_output)
-        print(f"Successfully restored image saved to {output_path}")
+        if output_dir:
+            final_output_path = os.path.join(output_dir, f"final_{img_name}")
+            cv2.imwrite(final_output_path, final_output_bgr)
+            print(f"Saved final output to {final_output_path}")
+            
+        # Convert final BGR cv2 image back to PIL RGB for return
+        final_output_rgb = cv2.cvtColor(final_output_bgr, cv2.COLOR_BGR2RGB)
+        return Image.fromarray(final_output_rgb)
 
     def tensor_to_cv2(self, tensor):
         """Converts a PyTorch tensor (C, H, W) to a CV2 image (H, W, C) in BGR format."""

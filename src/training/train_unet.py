@@ -2,8 +2,8 @@
 train_unet.py
 
 This script trains the PyTorch U-Net model for color and light restoration.
-It uses the PairedArtDataset with data augmentation and saves the best
-model based on validation loss.
+It uses the SyntheticArtDataset which generates damaged images on-the-fly
+from clean images, ensuring a larger variety of training examples.
 """
 import torch
 import torch.nn as nn
@@ -28,7 +28,7 @@ DATA_BASE_PATH = os.path.join(PROJECT_ROOT, "data/raw/AI_for_Art_Restoration_2")
 MODEL_SAVE_DIR = os.path.join(PROJECT_ROOT, "outputs/models/unet")
 LOGS_DIR = os.path.join(PROJECT_ROOT, "outputs/logs/unet")
 BATCH_SIZE = 8 # Lowered for potentially high memory usage of U-Net
-EPOCHS = 100
+EPOCHS = 20
 LEARNING_RATE = 1e-4
 VAL_SPLIT = 0.2
 IMG_SIZE = (256, 256)
@@ -74,7 +74,7 @@ def train_model():
         encoder_weights="imagenet",
         in_channels=3,
         classes=3,
-        activation='sigmoid' # Output values between 0 and 1
+        activation='sigmoid' # Output raw logits, let loss function handle activation
     ).to(device)
     
     optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
