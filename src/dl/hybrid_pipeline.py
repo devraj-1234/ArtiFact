@@ -17,7 +17,7 @@ from gfpgan import GFPGANer
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-from src.dl.realesrgan_wrapper import RealESRGANRestorer
+from src.models.realesrgan_wrapper import RealESRGANRestorer
 from torchvision import transforms
 
 class HybridPipeline:

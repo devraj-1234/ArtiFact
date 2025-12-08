@@ -1,6 +1,7 @@
 """
 test_model.py
 Loads the trained U-Net and restores a specific image.
+Updated for Tanh activation ([-1, 1] range).
 """
 import torch
 import cv2
@@ -9,14 +10,12 @@ import segmentation_models_pytorch as smp
 from torchvision import transforms
 from PIL import Image
 import os
+import matplotlib.pyplot as plt
 
 # --- CONFIG ---
-# Path to the BEST saved model
 MODEL_PATH = r"outputs/models/unet/best_unet_resnet34_perceptual.pth"
-# Path to a REAL damaged image you want to fix
-TEST_IMAGE_PATH = r"data/raw/AI_for_Art_Restoration_2/paired_dataset_art/damaged/download.jpg" 
-# (If you don't have a real one handy, pick one from your dataset or download one)
-OUTPUT_PATH = "restored_result.png"
+# Update this path to whatever real image you want to test
+TEST_IMAGE_PATH = r"data/raw/AI_for_Art_Restoration_2/paired_dataset_art/damaged/2.png" 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 def restore_image():
@@ -26,13 +25,14 @@ def restore_image():
 
     print(f"Loading model from {MODEL_PATH}...")
     
-    # 1. Initialize Model (Must match training config exactly)
+    # 1. Initialize Model
+    # Architecture must match training EXACTLY
     model = smp.Unet(
         encoder_name="resnet34",
-        encoder_weights=None, # No need to download weights, we load our own
+        encoder_weights=None,
         in_channels=3,
         classes=3,
-        activation='sigmoid'
+        activation='tanh' # Correct activation for [-1, 1] range
     ).to(DEVICE)
 
     # 2. Load Weights
@@ -40,13 +40,16 @@ def restore_image():
     model.eval()
 
     # 3. Load and Preprocess Image
+    if not os.path.exists(TEST_IMAGE_PATH):
+        print(f"Error: Image not found at {TEST_IMAGE_PATH}")
+        return
+        
     print(f"Processing {TEST_IMAGE_PATH}...")
     img = Image.open(TEST_IMAGE_PATH).convert("RGB")
     original_size = img.size
     
-    # Resize to training size (256x256) for the U-Net
-    # Note: In a production pipeline, we would tile the image. 
-    # For now, we resize to see if the restoration logic works.
+    # Preprocessing
+    # We resize to 256x256 for the U-Net.
     transform = transforms.Compose([
         transforms.Resize((256, 256)),
         transforms.ToTensor(),
@@ -60,25 +63,46 @@ def restore_image():
         output_tensor = model(input_tensor)
 
     # 5. Post-process (Tensor -> Image)
-    # The model output is in [-1, 1] (due to normalization) or [0, 1] (sigmoid).
-    # Since we used Sigmoid activation, output is [0, 1].
+    
+    # --- TANH FIX: Denormalize [-1, 1] -> [0, 1] ---
+    # Since Tanh outputs values from -1 to 1, we must shift and scale them.
+    # Formula: (x + 1) / 2
+    output_tensor = (output_tensor + 1) / 2.0
+    
+    # Clamp to ensure we stay in valid [0, 1] range (handles minor overshoot)
+    output_tensor = torch.clamp(output_tensor, 0, 1)
+
+    # Convert to Numpy (H, W, C)
     output_image = output_tensor.squeeze().cpu().numpy().transpose(1, 2, 0)
     
-    # Denormalize if necessary? 
-    # Wait, our target was normalized to [-1, 1] during training, 
-    # but the Sigmoid activation forces [0, 1]. 
-    # Ideally, we usually train without sigmoid for reconstruction or handle ranges carefully.
-    # Let's assume standard visual output [0, 1].
+    # Scale to [0, 255] for display/saving
+    output_image = (output_image * 255).astype(np.uint8)
     
-    output_image = np.clip(output_image * 255, 0, 255).astype(np.uint8)
+    # Resize back to original dimensions (optional, keeps aspect ratio of result)
+    # Using Lanczos interpolation for better sharpness when upsizing
+    output_image = cv2.resize(output_image, original_size, interpolation=cv2.INTER_LANCZOS4)
     
-    # Resize back to original dimensions (optional, might be blurry)
-    output_image = cv2.resize(output_image, original_size, interpolation=cv2.INTER_CUBIC)
+    # 6. Visualization
+    rgb_in = np.array(img)
+    # output_image is already RGB (since we didn't convert to BGR yet)
     
-    # Save
-    output_image = cv2.cvtColor(output_image, cv2.COLOR_RGB2BGR) # OpenCV uses BGR
-    cv2.imwrite(OUTPUT_PATH, output_image)
-    print(f"Restored image saved to {OUTPUT_PATH}")
+    plt.figure(figsize=(12, 6))
+    
+    plt.subplot(1, 2, 1)
+    plt.imshow(rgb_in)
+    plt.title("Input Damaged Image")
+    plt.axis("off")
+
+    plt.subplot(1, 2, 2)
+    plt.imshow(output_image)
+    plt.title("Restored Output (U-Net)")
+    plt.axis("off")
+    
+    plt.tight_layout()
+    plt.show()
+
+    # Optional: Save result
+    # cv2.imwrite("restored_result.png", cv2.cvtColor(output_image, cv2.COLOR_RGB2BGR))
 
 if __name__ == "__main__":
     restore_image()

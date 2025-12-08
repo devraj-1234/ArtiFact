@@ -130,7 +130,7 @@ class RealESRGANWrapper:
         Returns:
             A tuple containing the restored image and None.
         """
-        restored_image = self.restorer.restore(image, outscale=outscale)
+        restored_image, _ = self.restorer.restore(image, outscale=outscale)
         return restored_image, None
 
 

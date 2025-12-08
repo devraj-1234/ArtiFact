@@ -33,7 +33,7 @@ except ImportError:
     print('Warning: Deep learning models not available (TensorFlow not installed)')
 
 try:
-    from src.dl.realesrgan_wrapper import RealESRGANRestorer
+    from src.models.realesrgan_wrapper import RealESRGANRestorer
     REALESRGAN_AVAILABLE = True
 except ImportError:
     REALESRGAN_AVAILABLE = False
