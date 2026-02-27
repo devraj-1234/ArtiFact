@@ -16,10 +16,6 @@ from pathlib import Path
 from sklearn.model_selection import train_test_split
 
 
-# ============================================================
-#   DAMAGE EFFECTS
-# ============================================================
-
 def apply_varnish(img):
     """
     Simulates the yellow/brown oxidation of old varnish layers.
@@ -31,14 +27,9 @@ def apply_varnish(img):
 
     varnish = Image.new("RGB", img.size, (r_tint, g_tint, b_tint))
 
-    alpha = random.uniform(0.15, 0.35)  # Subtle (FIXED)
+    alpha = random.uniform(0.15, 0.35)  # Subtle 
     return Image.blend(img, varnish, alpha)
 
-
-
-# ============================================================
-#   MAIN DATASET
-# ============================================================
 
 class SyntheticArtDataset(Dataset):
     """

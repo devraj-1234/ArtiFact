@@ -5,7 +5,7 @@ import os
 from src.data.pytorch_dataset import get_dataloaders
 
 # Config
-BASE_PATH = r"data/raw/AI_for_Art_Restoration_2" # Update if needed
+BASE_PATH = r"D:\R&D Project\image_processing\data\raw\AI_for_Art_Restoration_2"
 OUTPUT_FILE = "preview_training_batch.png"
 
 def show_batch():

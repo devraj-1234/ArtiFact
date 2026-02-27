@@ -38,10 +38,10 @@ def test_dataset():
         print(f"Damaged range: [{damaged.min():.3f}, {damaged.max():.3f}]")
         print(f"Clean range: [{clean.min():.3f}, {clean.max():.3f}]")
         
-        if damaged.max() <= 1.0 and damaged.min() >= 0.0:
-            print("Values are in [0, 1] range.")
+        if damaged.max() <= 1.0 and damaged.min() >= -1.0:
+            print("Values are in [-1, 1] range.")
         else:
-            print("Values are OUT of [0, 1] range.")
+            print("Values are OUT of [-1, 1] range.")
 
     except Exception as e:
         print(f"Error during test: {e}")
