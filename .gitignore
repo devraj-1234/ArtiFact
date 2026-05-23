@@ -1,6 +1,10 @@
 # Python and Environment
 /venv/
 /__pycache__/
+/src/__pycache__/
+/src/data/__pycache__/
+/src/models/__pycache__/
+/src/dl/__pycache__/
 *.pyc
 
 # VS Code settings
@@ -9,5 +13,8 @@
 # Large Data and Model Files
 /data/
 /outputs/
+/notebooks/
+/artifact_restoration.egg-info/
+/experiments/
 *.pth
 *.onnx
