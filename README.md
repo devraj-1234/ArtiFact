@@ -1,218 +1,295 @@
-# ArtifactVision: Art Restoration and Forgery Detection
+# 🎨 Reversing Time: AI Art Restoration Pipeline
 
-A comprehensive computer vision project for artifact restoration and forgery detection using classical image processing, FFT analysis, machine learning, and pre-trained deep learning models.
+![Python](https://img.shields.io/badge/Python-3.8%2B-blue)
+![PyTorch](https://img.shields.io/badge/PyTorch-Deep%20Learning-ee4c2c)
+![License](https://img.shields.io/badge/License-MIT-green)
 
-## Project Overview
+A memory-optimized, multi-stage AI inference pipeline designed to sequentially repair, color-correct, and upscale heavily degraded classical artwork on standard consumer hardware.
 
-ArtifactVision provides a production-ready toolkit for artwork restoration and analysis:
+> **[Insert a massive side-by-side Before/After comparison image from your `assets` folder here]**
 
-1. **Restore damaged artwork** using classical, ML-guided, and pre-trained DL methods
-2. **Intelligent damage analysis** using FFT features and machine learning
-3. **Pre-trained models** for production-quality restoration (Real-ESRGAN)
-4. **Hybrid system** that automatically selects the best restoration method
-
-The project implements a three-tier restoration approach:
-- **Classical Methods**: Fast restoration for light damage (denoising, sharpening, color correction)
-- **ML-Guided Methods**: Intelligent parameter selection using FFT features
-- **Pre-trained DL**: Real-ESRGAN for severe damage (no training required, production-ready)
-
-## Key Features
-
-### Intelligent Restoration System
-- **Automatic Damage Analysis**: FFT-based feature extraction (12 features)
-- **ML Decision Making**: Random Forest predicts optimal restoration strategy
-- **Multi-Model Integration**: Classical, ML-guided, and Real-ESRGAN
-- **Adaptive Routing**: Automatically selects best method based on damage severity
-
-### Pre-trained Deep Learning (NEW)
-- **Real-ESRGAN Integration**: State-of-the-art restoration without training
-- **GFPGAN Support**: Portrait-specific enhancement
-- **Production Ready**: Works with small datasets, no overfitting
-- **High Quality**: 25-32 dB PSNR (vs 11 dB with classical methods)
-
-### Classical Image Restoration
-- **Denoising**: Gaussian, bilateral filtering, non-local means
-- **Enhancement**: CLAHE, histogram equalization, color correction
-- **Sharpening**: Unsharp masking with adaptive parameters
-- **Inpainting**: OpenCV Telea and Navier-Stokes methods
-
-### Machine Learning Pipeline
-- **Feature Extraction**: 12 FFT-based features (frequency analysis)
-- **Damage Classification**: 99% accuracy with Random Forest
-- **Parameter Prediction**: Optimal restoration settings prediction
-- **Model Training**: Complete training notebooks included
-
-## Directory Structure
-
-```
-image_processing/
-├── data/
-│   ├── raw/                                  # Raw artwork dataset
-│   │   └── AI_for_Art_Restoration_2/
-│   │       └── paired_dataset_art/
-│   │           ├── damaged/                  # Damaged artwork images
-│   │           └── undamaged/                # Original/undamaged artwork
-│   └── processed/                            # Processed data for training
-├── notebooks/
-│   ├── image_restoration_tutorial.ipynb      # Beginner-friendly tutorial
-│   ├── advanced_restoration_techniques.ipynb # Advanced methods (NEW!)
-│   ├── explore_datasets.ipynb                # Data exploration
-│   ├── fft_art_analysis.ipynb                # FFT analysis
-│   └── beginners_guide_to_fft.ipynb          # FFT introduction
-├── outputs/
-│   ├── figures/                              # Output visualizations
-│   └── models/                               # Saved model files
-└── src/
-    └── basics/
-        ├── basic_fft.py                      # FFT operations
-        ├── basic_restoration.py              # Classical restoration
-        ├── advanced_restoration.py           # Advanced techniques (NEW!)
-        ├── feature_extractor.py              # Feature extraction
-        └── image_analyzer.py                 # Image analysis
+```markdown
+![Before and After](assets/final_masterpiece.png)
 ```
 
-## Installation
+---
 
-1. Clone the repository:
-```bash
-git clone https://github.com/yourusername/artifact-vision.git
-cd artifact-vision
-```
+# 📖 Overview
 
-2. Install the package in editable mode:
-```bash
-pip install -e .
-```
+Historical art suffers from centuries of degradation, including:
 
-3. Install optional dependencies for advanced features:
-```bash
-pip install PyWavelets  # For wavelet-based denoising
-pip install scikit-image  # For SSIM metric
-```
+- Physical canvas tears
+- UV bleaching
+- Severe varnish oxidation (yellowing)
 
-## Quick Start
+This project addresses these issues not as a single task, but as a sequential assembly line of specialized neural networks.
 
-### Using Jupyter Notebooks (Recommended for Beginners)
+By utilizing aggressive VRAM management techniques such as:
 
-1. **Basic Tutorial**: Start with `notebooks/image_restoration_tutorial.ipynb`
-   - Learn classical restoration techniques
-   - Interactive parameter tuning
-   - Real-time quality metrics
+- Automatic Mixed Precision (AMP)
+- Tiled inference
+- Sequential computational graph destruction
 
-2. **Advanced Techniques**: Explore `notebooks/advanced_restoration_techniques.ipynb`
-   - FFT-based noise removal
-   - Wavelet denoising
-   - Automatic damage detection
-   - Anisotropic diffusion
-   - Complete advanced pipeline
+the pipeline successfully runs **four massive state-of-the-art models on a standard 6GB consumer GPU.**
 
-3. **FFT Analysis**: Check `notebooks/beginners_guide_to_fft.ipynb`
-   - Introduction to Fourier transforms
-   - Frequency domain visualization
+---
 
-### Using Python API
+# ⚙️ The Multi-Model Architecture
 
-```python
-from src.basics.basic_restoration import (
-    denoise_bilateral,
-    enhance_clahe,
-    sharpen_image,
-    restore_image
-)
-from src.basics.advanced_restoration import (
-    fft_denoise,
-    wavelet_denoise,
-    auto_detect_damage_mask,
-    exemplar_inpaint,
-    anisotropic_diffusion
-)
-import cv2
+The pipeline processes images sequentially through four distinct stages:
 
-# Load image
-img = cv2.imread('damaged_art.jpg')
+---
 
-# Basic restoration
-restored_basic = restore_image(img, techniques=['denoise', 'enhance', 'sharpen'])
+## Stage 0: Structural Inpainting (LaMa)
 
-# Advanced restoration
-restored_advanced = fft_denoise(img, threshold_percentile=90)
-restored_advanced = anisotropic_diffusion(restored_advanced, iterations=10)
+### Purpose
+Seamlessly patches massive physical gaps, tears, and deep canvas cracks.
 
-# Auto inpainting
-mask = auto_detect_damage_mask(img, method='combined')
-restored_advanced = exemplar_inpaint(restored_advanced, mask)
+### Engineering
+Implements a custom mathematical tiling function:
 
-# Save result
-cv2.imwrite('restored_art.jpg', restored_advanced)
-```
+- `512x512` tiles
+- `32px` overlap
 
-## Restoration Techniques Comparison
+This bypasses spatial memory limits during high-resolution processing.
 
-| Technique | Best For | Speed | Quality |
-|-----------|----------|-------|---------|
-| Gaussian Denoising | General noise | ⚡⚡⚡ | ⭐⭐ |
-| Bilateral Filter | Edge-preserving smoothing | ⚡⚡ | ⭐⭐⭐ |
-| Non-Local Means | Texture preservation | ⚡ | ⭐⭐⭐⭐ |
-| FFT Denoising | High-frequency noise | ⚡⚡ | ⭐⭐⭐⭐ |
-| Wavelet Denoising | Multi-scale features | ⚡⚡ | ⭐⭐⭐⭐⭐ |
-| Anisotropic Diffusion | Edge preservation | ⚡ | ⭐⭐⭐⭐ |
-| Auto Inpainting | Scratches, damage | ⚡⚡ | ⭐⭐⭐⭐ |
-| Color Correction | Color fading | ⚡⚡⚡ | ⭐⭐⭐ |
-| Multi-Scale | Complex damage | ⚡ | ⭐⭐⭐⭐⭐ |
+---
 
-## Usage Examples
+## Stage 1: Color & Light Correction (Custom U-Net)
 
-### Restoration
+### Purpose
+Reverses varnish oxidation and UV fading.
 
-To restore a damaged artwork:
+### Engineering
+Custom-trained **ResNet34 U-Net** utilizing a balanced combination of:
+
+- **L1 Loss** → pixel-level color accuracy
+- **VGG19 Perceptual Loss** → preserves authentic brushstroke textures
+
+---
+
+## Stage 2: Super-Resolution (Real-ESRGAN)
+
+### Purpose
+Upscales the repaired image by **400%**, hallucinating:
+
+- fine-grained textures
+- canvas grain
+- artistic details
+
+### Engineering
+Features:
+
+- automated Hugging Face wrapper
+- dynamic weight fetching
+- fallback resolution handling
+
+---
+
+## Stage 3: Semantic Face Restoration (GFPGAN)
+
+### Purpose
+Selectively reconstructs facial geometry using **Generative Facial Priors** to ensure human features remain structurally sound.
+
+---
+
+## Stage 4: Deterministic Post-Processing
+
+### Purpose
+Applies:
+
+- Auto White Balance in the **CIELAB** color space
+- **Lanczos4 interpolation** for crispness
+
+---
+
+# 🚀 Setup & Installation
+
+## 1. Clone the Repository
 
 ```bash
-python src/main/main.py restore --input_image path/to/damaged_image.jpg --output_image path/to/restored_image.jpg
+git clone https://github.com/yourusername/AI-Art-Restoration.git
+cd AI-Art-Restoration
 ```
 
-Optional arguments:
+---
 
-- `--model_path`: Path to a pretrained model (default: outputs/models/restoration_model.h5)
-- `--visualize`: Generate before/after comparison visualization
+## 2. Create a Virtual Environment
 
-### Forgery Detection
-
-To detect if an artwork is genuine or a forgery:
+### Linux / macOS
 
 ```bash
-python src/main/main.py detect --input_image path/to/suspicious_image.jpg
+python -m venv venv
+source venv/bin/activate
 ```
 
-Optional arguments:
+### Windows
 
-- `--model_path`: Path to a pretrained model (default: outputs/models/detection_model_rf.joblib)
-- `--model_type`: Type of model to use (rf: Random Forest, svm: SVM)
-- `--visualize`: Generate analysis visualization
+```powershell
+python -m venv venv
+venv\Scripts\activate
+```
 
-## Training Models
+---
 
-### Training the Restoration Model
+## 3. Install Dependencies
 
 ```bash
-python src/training/train_restoration.py --data_path data/raw/AI_for_Art_Restoration_2 --epochs 50
+pip install -r requirements.txt
 ```
 
-### Training the Forgery Detection Model
+---
+
+# 📦 Model Weights Download
+
+Because model weights exceed GitHub's file size limits, the core U-Net weights are hosted externally.
+
+> Real-ESRGAN and GFPGAN weights will download automatically upon first run.
+
+## Download Custom U-Net Weights
+
+```text
+[INSERT GOOGLE DRIVE / HUGGINGFACE LINK HERE]
+```
+
+---
+
+## Setup Checkpoints Folder
+
+Create a folder named `checkpoints` in the root directory.
+
+Place the downloaded file:
+
+```text
+best_unet_resnet34_perceptual.pth
+```
+
+inside the `checkpoints` folder.
+
+---
+
+# 📁 Project Structure
+
+```text
+AI_Art_Restoration/
+├── assets/
+│   ├── sample_damaged.jpg
+│   └── sample_real.jpg
+├── checkpoints/
+│   └── best_unet_resnet34_perceptual.pth
+├── src/
+├── inference.py
+└── README.md
+```
+
+---
+
+# 💻 Usage
+
+## 1. Add a Damaged Artwork
+
+Place a damaged historical image inside the `assets/` folder and name it:
+
+```text
+sample_damaged.jpg
+```
+
+---
+
+## 2. Run the Inference Pipeline
 
 ```bash
-python src/training/train_detection.py --data_path data/raw/AI_for_Art_Restoration_2 --model_type rf
+python inference.py
 ```
 
-## FFT Analysis
+---
 
-The project uses Fast Fourier Transform (FFT) to analyze artwork in the frequency domain, which helps:
+## 3. Output
 
-- Identify patterns and artifacts not visible in the spatial domain
-- Extract features for machine learning algorithms
-- Filter specific frequency bands for image restoration
+The script will:
 
-For an in-depth look at the FFT analysis techniques used, see `notebooks/fft_art_analysis.ipynb`.
+- print terminal logs showing VRAM allocation
+- automatically download missing GAN weights
+- visualize all restoration stages using Matplotlib
 
-## License
+---
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+# 📊 Evaluation & Metrics
+
+The pipeline utilizes **Scikit-Image** for rigorous mathematical evaluation against pristine ground-truth data.
+
+Ground truth images are synthetically degraded during training.
+
+---
+
+## PSNR (Peak Signal-to-Noise Ratio)
+
+Measures pixel-perfect restoration accuracy.
+
+---
+
+## SSIM (Structural Similarity Index)
+
+Ensures structural and textual integrity of:
+
+- canvas geometry
+- brushstrokes
+- fine artistic textures
+
+---
+
+# 🧠 Key Engineering Features
+
+- Memory-optimized inference pipeline
+- Sequential GPU graph destruction
+- Tiled high-resolution restoration
+- Mixed precision inference
+- Modular multi-stage architecture
+- Automatic model weight fetching
+- Consumer GPU compatibility
+
+---
+
+# 📚 Acknowledgments & References
+
+This project stands on the shoulders of incredible open-source research.
+
+---
+
+## LaMa
+
+Suvorov et al.
+
+> *Resolution-Robust Large Mask Inpainting with Fourier Convolutions*  
+> WACV 2022
+
+---
+
+## Real-ESRGAN
+
+Wang et al.
+
+> ICCVW 2021
+
+---
+
+## GFPGAN
+
+Wang et al.
+
+> *Towards Real-World Blind Face Restoration*  
+> CVPR 2021
+
+---
+
+## U-Net
+
+Ronneberger et al.
+
+> MICCAI 2015
+
+---
+
+# 📜 License
+
+This project is licensed under the MIT License.

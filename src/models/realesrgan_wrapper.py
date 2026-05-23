@@ -156,7 +156,7 @@ class RealESRGANRestorer:
         self.device = device
 
         # Resolve and ensure weights exist (auto-download via HF)
-        weights_dir = weights_dir or str(_repo_root() / "outputs" / "models" / "realesrgan")
+        weights_dir = weights_dir or str(_repo_root() / "checkpoints" / "realesrgan")
         model_path = ensure_realesrgan_weights(model_name, weights_dir)
 
         # Choose architecture by model

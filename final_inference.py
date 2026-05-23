@@ -1,8 +1,11 @@
 import os
 from pathlib import Path
-# Optimize memory allocation to reduce fragmentation
+import sys
+
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:128"
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+ROOT_DIR = Path(__file__).resolve().parent
+sys.path.append(str(ROOT_DIR)) 
 
 import torch
 import cv2
@@ -10,31 +13,22 @@ import numpy as np
 import segmentation_models_pytorch as smp
 from torchvision import transforms
 from PIL import Image
-import sys
 import matplotlib.pyplot as plt
 import gc
 
-# NEW: Import Scikit-Image Metrics
 from skimage.metrics import peak_signal_noise_ratio as psnr
 from skimage.metrics import structural_similarity as ssim
-
-# State-of-the-Art Inpainting
 from simple_lama_inpainting import SimpleLama
-
-# Add project root
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from src.models.realesrgan_wrapper import RealESRGANWrapper
 from src.models.gfpgan_wrapper import GFPGANWrapper
 
-# --- CONFIG ---
-UNET_PATH = str(PROJECT_ROOT / "outputs/models/unet/best_unet_resnet34_perceptual.pth")
-TEST_IMAGE_PATH = r"D:\R&D Project\image_processing\data\raw\AI_for_Art_Restoration_2\paired_dataset_art\damaged\2.png"
-REAL_IMAGE_PATH = r"D:\R&D Project\image_processing\data\raw\AI_for_Art_Restoration_2\paired_dataset_art\undamaged\2.png"
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+UNET_PATH = str(ROOT_DIR / "checkpoints" / "best_unet_resnet34_perceptual.pth")     # Update this path to the downloaded U-Net weights
 
-# ==========================================
-# 1. HELPER FUNCTIONS (Kept Exactly the Same)
-# ==========================================
+TEST_IMAGE_PATH = str(ROOT_DIR / "assets" / "sample_damaged.png")   # Update this path to your test image
+
+REAL_IMAGE_PATH = str(ROOT_DIR / "assets" / "")                     # If you have a ground truth image for evaluation, place it in the assets folder and update this path.
+
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"             # Use GPU if available, otherwise fallback to CPU
 
 def clean_memory():
     gc.collect()
@@ -182,8 +176,8 @@ def main():
         # Calculate SSIM
         ssim_value = ssim(real_bgr, final_bgr, data_range=255, channel_axis=-1)
         
-        print(f"PSNR : {psnr_value:.2f} dB (Higher is better, > 30 is excellent)")
-        print(f"SSIM : {ssim_value:.4f} (Closer to 1.0 is better)")
+        # print(f"PSNR : {psnr_value:.2f} dB (Higher is better, > 30 is excellent)")
+        # print(f"SSIM : {ssim_value:.4f} (Closer to 1.0 is better)")
     else:
         print("Ground truth image not found. Metrics skipped.")
         
@@ -204,40 +198,50 @@ def main():
     if has_ground_truth:
         plt.suptitle(f"Pipeline Evaluation | PSNR: {psnr_value:.2f} dB | SSIM: {ssim_value:.4f}", fontsize=16, fontweight='bold', y=1.05)
 
-    plt.subplot(1, 7, 1)
+    plt.subplot(1, 6, 1)
     plt.imshow(original_rgb)
     plt.title("1. Input Damaged", fontweight='bold')
     plt.axis("off")
 
-    plt.subplot(1, 7, 2)
+    plt.subplot(1, 6, 2)
     plt.imshow(inpainted_rgb)
     plt.title("2. Stage 0: LaMa\n(Structural Inpainting)", fontweight='bold')
     plt.axis("off")
 
-    plt.subplot(1, 7, 3)
+    plt.subplot(1, 6, 3)
     plt.imshow(unet_rgb)
     plt.title("3. Stage 1: U-Net\n(Color Correction)", fontweight='bold')
     plt.axis("off")
 
-    plt.subplot(1, 7, 4)
+    plt.subplot(1, 6, 4)
     plt.imshow(esrgan_rgb)
     plt.title("4. Stage 2: Real-ESRGAN\n(Texture x4)", fontweight='bold')
     plt.axis("off")
 
-    plt.subplot(1, 7, 5)
+    plt.subplot(1, 6, 5)
     plt.imshow(gfpgan_rgb)
     plt.title("5. Stage 3: GFPGAN\n(Face Restoration)", fontweight='bold')
     plt.axis("off")
 
-    plt.subplot(1, 7, 6)
+    plt.subplot(1, 6, 6)
     plt.imshow(final_rgb)
     plt.title("6. Stage 4: Final AWB\n(Remove Yellow Tint)", fontweight='bold')
     plt.axis("off")
     
-    plt.subplot(1, 7, 7)
-    plt.imshow(real_rgb)
-    plt.title("7. Ground Truth", fontweight='bold')
-    plt.axis("off")
+    # plt.subplot(1, 7, 7)
+    # plt.imshow(real_rgb)
+    # plt.title("7. Ground Truth", fontweight='bold')
+    # plt.axis("off")
+    
+    # plt.subplot(1, 2, 1)
+    # plt.imshow(original_rgb)
+    # plt.title("Input Damaged", fontweight='bold')
+    # plt.axis("off")
+    
+    # plt.subplot(1, 2, 2)
+    # plt.imshow(final_rgb)
+    # plt.title("Restored Image", fontweight='bold')
+    # plt.axis("off")
     
     plt.tight_layout()
     print("Displaying plot...")

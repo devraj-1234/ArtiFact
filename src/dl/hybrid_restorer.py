@@ -21,9 +21,9 @@ import os
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 
-from src.ml.feature_extractor import extract_ml_features
-from src.basics.optimized_restoration import restore_image_optimized
-from src.basics.advanced_restoration import unsharp_mask
+from experiments.ml.feature_extractor import extract_ml_features
+from experiments.basics.optimized_restoration import restore_image_optimized
+from experiments.basics.advanced_restoration import unsharp_mask
 
 try:
     from src.dl.unet_model import UNetRestorer

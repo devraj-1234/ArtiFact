@@ -78,7 +78,7 @@ class GFPGANWrapper:
         elif '1.4' in model_version: name = 'GFPGANv1.4'
         else: name = 'GFPGANv1.3'
 
-        weights_dir = str(_repo_root() / "outputs" / "models" / "gfpgan")
+        weights_dir = str(_repo_root() / "checkpoints" / "gfpgan")
         model_path = ensure_gfpgan_weights(name, weights_dir)
 
         self.restorer = GFPGANer(

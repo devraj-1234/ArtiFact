@@ -16,5 +16,6 @@
 /notebooks/
 /artifact_restoration.egg-info/
 /experiments/
+/gfpgan
 *.pth
 *.onnx

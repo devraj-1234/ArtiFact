@@ -25,7 +25,7 @@ def show_batch():
     plt.imshow(grid_img.permute(1, 2, 0))
     plt.axis('off')
     plt.title("Top: Synthetically Damaged Input | Bottom: Clean Ground Truth")
-    
+    plt.show()
     # Save it
     plt.savefig(OUTPUT_FILE)
     print(f"Saved preview to {os.path.abspath(OUTPUT_FILE)}")
