@@ -33,65 +33,80 @@ except ImportError:
     REALESRGAN_AVAILABLE = False
     warnings.warn("Real-ESRGAN not installed. Install with: pip install realesrgan basicsr")
 
-HF_CANDIDATES = [
-    # Prefer new org first
-    ("ai-forever/Real-ESRGAN", "weights/{name}.pth"),
-    ("ai-forever/Real-ESRGAN", "{name}.pth"),
-    # Fallback to original org
-    ("xinntao/Real-ESRGAN", "weights/{name}.pth"),
-    ("xinntao/Real-ESRGAN", "{name}.pth"),
-]
+# HF_CANDIDATES = [
+#     # Prefer new org first
+#     ("ai-forever/Real-ESRGAN", "weights/{name}.pth"),
+#     ("ai-forever/Real-ESRGAN", "{name}.pth"),
+#     # Fallback to original org
+#     ("xinntao/Real-ESRGAN", "weights/{name}.pth"),
+#     ("xinntao/Real-ESRGAN", "{name}.pth"),
+# ]
 
 
 def _repo_root() -> Path:
     # <repo>/src/dl/realesrgan_wrapper.py -> parents[2] == <repo>
     return Path(__file__).resolve().parents[2]
 
-
 def ensure_realesrgan_weights(model_name: str, dst_dir: str | Path) -> str:
     """
-    Download Real-ESRGAN weights via huggingface_hub, preferring ai-forever.
-    Respects HTTP(S)_PROXY and HF token if set in env.
+    Checks for local Real-ESRGAN weights. Offline mode.
     """
-    try:
-        from huggingface_hub import hf_hub_download
-    except Exception as e:
-        raise RuntimeError("huggingface_hub is required. Install with: pip install huggingface-hub") from e
-
     dst_dir = Path(dst_dir)
-    dst_dir.mkdir(parents=True, exist_ok=True)
     dst_path = dst_dir / f"{model_name}.pth"
 
     if dst_path.exists() and dst_path.stat().st_size > 0:
         return str(dst_path)
 
-    last_err: Optional[Exception] = None
-    for repo, pattern in HF_CANDIDATES:
-        filename = pattern.format(name=model_name)
-        try:
-            local_path = hf_hub_download(
-                repo_id=repo,
-                filename=filename,
-                local_dir=str(dst_dir),                # cache to our weights dir
-                local_dir_use_symlinks=False           # write a real file, not a symlink
-            )
-            # Ensure final filename is consistent
-            final_path = dst_path
-            if Path(local_path) != final_path:
-                Path(local_path).replace(final_path)
-            if final_path.exists() and final_path.stat().st_size > 0:
-                print(f"Downloaded {model_name} from {repo}/{filename} -> {final_path}")
-                return str(final_path)
-            last_err = RuntimeError("Downloaded file is empty")
-        except Exception as e:
-            last_err = e
-            continue
-
-    raise RuntimeError(
-        f"Failed to download weights for {model_name}. "
-        f"Tried repositories: {[c[0] for c in HF_CANDIDATES]} "
-        f"Place the file manually at: {dst_path}\nLast error: {last_err}"
+    raise FileNotFoundError(
+        f"\n[ERROR] Missing Real-ESRGAN weights.\n"
+        f"Expected to find the file here: {dst_path}\n"
+        f"Please extract the provided ArtRestoration_Weights.zip into your root directory."
     )
+
+# def ensure_realesrgan_weights(model_name: str, dst_dir: str | Path) -> str:
+#     """
+#     Download Real-ESRGAN weights via huggingface_hub, preferring ai-forever.
+#     Respects HTTP(S)_PROXY and HF token if set in env.
+#     """
+#     try:
+#         from huggingface_hub import hf_hub_download
+#     except Exception as e:
+#         raise RuntimeError("huggingface_hub is required. Install with: pip install huggingface-hub") from e
+
+#     dst_dir = Path(dst_dir)
+#     dst_dir.mkdir(parents=True, exist_ok=True)
+#     dst_path = dst_dir / f"{model_name}.pth"
+
+#     if dst_path.exists() and dst_path.stat().st_size > 0:
+#         return str(dst_path)
+
+#     last_err: Optional[Exception] = None
+#     for repo, pattern in HF_CANDIDATES:
+#         filename = pattern.format(name=model_name)
+#         try:
+#             local_path = hf_hub_download(
+#                 repo_id=repo,
+#                 filename=filename,
+#                 local_dir=str(dst_dir),                # cache to our weights dir
+#                 local_dir_use_symlinks=False           # write a real file, not a symlink
+#             )
+#             # Ensure final filename is consistent
+#             final_path = dst_path
+#             if Path(local_path) != final_path:
+#                 Path(local_path).replace(final_path)
+#             if final_path.exists() and final_path.stat().st_size > 0:
+#                 print(f"Downloaded {model_name} from {repo}/{filename} -> {final_path}")
+#                 return str(final_path)
+#             last_err = RuntimeError("Downloaded file is empty")
+#         except Exception as e:
+#             last_err = e
+#             continue
+
+#     raise RuntimeError(
+#         f"Failed to download weights for {model_name}. "
+#         f"Tried repositories: {[c[0] for c in HF_CANDIDATES]} "
+#         f"Place the file manually at: {dst_path}\nLast error: {last_err}"
+#     )
 
 
 class RealESRGANWrapper:

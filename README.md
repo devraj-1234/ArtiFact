@@ -80,8 +80,7 @@ Upscales the repaired image by **400%**, hallucinating:
 ### Engineering
 Features:
 
-- automated Hugging Face wrapper
-- dynamic weight fetching
+- 100% offline inference with bundled weights
 - fallback resolution handling
 
 ---
@@ -142,45 +141,34 @@ pip install -r requirements.txt
 
 # 📦 Model Weights Download
 
-Because model weights exceed GitHub's file size limits, the core U-Net weights are hosted externally.
+To run the pipeline entirely offline and avoid third-party server timeouts, all required model weights (Custom U-Net, Real-ESRGAN, and GFPGAN) have been bundled into a single archive.
 
-> Real-ESRGAN and GFPGAN weights will download automatically upon first run.
-
-## Download Custom U-Net Weights
-
-```text
-[INSERT GOOGLE DRIVE / HUGGINGFACE LINK HERE]
-```
-
----
-
-## Setup Checkpoints Folder
-
-Create a folder named `checkpoints` in the root directory.
-
-Place the downloaded file:
-
-```text
-best_unet_resnet34_perceptual.pth
-```
-
-inside the `checkpoints` folder.
+1. Download the complete weights package here: `https://drive.google.com/file/d/1JoA9iQBqHhYZbaEuDCD7rWvqbp8SJLle/view?usp=sharing`
+2. Extract the `.zip` file directly into the root directory of this repository.
 
 ---
 
 # 📁 Project Structure
 
+Ensure your directory structure looks exactly like this before running inference:
+
 ```text
 AI_Art_Restoration/
 ├── assets/
-│   ├── sample_damaged.jpg
-│   └── sample_real.jpg
+│   └── sample_damaged.jpg
 ├── checkpoints/
-│   └── best_unet_resnet34_perceptual.pth
+│   ├── best_unet_resnet34_perceptual.pth
+│   ├── realesrgan/
+│   │   └── RealESRGAN_x4plus.pth
+│   └── gfpgan/
+│       └── GFPGANv1.3.pth
+├── gfpgan/
+│   └── weights/
+│       ├── detection_Resnet50_Final.pth
+│       └── parsing_parsenet.pth
 ├── src/
-├── inference.py
+├── final_inference.py
 └── README.md
-```
 
 ---
 
@@ -199,7 +187,7 @@ sample_damaged.jpg
 ## 2. Run the Inference Pipeline
 
 ```bash
-python inference.py
+python final_inference.py
 ```
 
 ---
@@ -209,7 +197,6 @@ python inference.py
 The script will:
 
 - print terminal logs showing VRAM allocation
-- automatically download missing GAN weights
 - visualize all restoration stages using Matplotlib
 
 ---
@@ -245,7 +232,7 @@ Ensures structural and textual integrity of:
 - Tiled high-resolution restoration
 - Mixed precision inference
 - Modular multi-stage architecture
-- Automatic model weight fetching
+- Fully offline, zero-dependency runtime
 - Consumer GPU compatibility
 
 ---

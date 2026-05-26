@@ -22,44 +22,59 @@ except ImportError:
 def _repo_root() -> Path:
     return Path(__file__).resolve().parents[2]
 
+# def ensure_gfpgan_weights(model_name: str, dst_dir: str | Path) -> str:
+#     """
+#     Download GFPGAN weights if missing.
+#     """
+#     dst_dir = Path(dst_dir)
+#     dst_dir.mkdir(parents=True, exist_ok=True)
+#     dst_path = dst_dir / f"{model_name}.pth"
+
+#     if dst_path.exists() and dst_path.stat().st_size > 0:
+#         return str(dst_path)
+
+#     print(f"Downloading {model_name} weights...")
+    
+#     # Official releases
+#     urls = {
+#         'GFPGANv1.3': 'https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.3.pth',
+#         'GFPGANv1.4': 'https://github.com/TencentARC/GFPGAN/releases/download/v1.3.4/GFPGANv1.4.pth',
+#         'RestoreFormer': 'https://github.com/TencentARC/GFPGAN/releases/download/v1.3.4/RestoreFormer.pth'
+#     }
+
+#     if model_name not in urls:
+#         raise ValueError(f"Unknown model {model_name}. Available: {list(urls.keys())}")
+
+#     try:
+#         # Use simple urllib to avoid heavy deps if possible, or torch.hub
+#         import requests
+#         response = requests.get(urls[model_name], stream=True)
+#         response.raise_for_status()
+        
+#         with open(dst_path, 'wb') as f:
+#             for chunk in response.iter_content(chunk_size=8192):
+#                 f.write(chunk)
+                
+#         print(f"Downloaded to {dst_path}")
+#         return str(dst_path)
+#     except Exception as e:
+#         raise RuntimeError(f"Failed to download GFPGAN weights: {e}")
+
 def ensure_gfpgan_weights(model_name: str, dst_dir: str | Path) -> str:
     """
-    Download GFPGAN weights if missing.
+    Checks for local GFPGAN weights. Offline mode.
     """
     dst_dir = Path(dst_dir)
-    dst_dir.mkdir(parents=True, exist_ok=True)
     dst_path = dst_dir / f"{model_name}.pth"
 
     if dst_path.exists() and dst_path.stat().st_size > 0:
         return str(dst_path)
 
-    print(f"Downloading {model_name} weights...")
-    
-    # Official releases
-    urls = {
-        'GFPGANv1.3': 'https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.3.pth',
-        'GFPGANv1.4': 'https://github.com/TencentARC/GFPGAN/releases/download/v1.3.4/GFPGANv1.4.pth',
-        'RestoreFormer': 'https://github.com/TencentARC/GFPGAN/releases/download/v1.3.4/RestoreFormer.pth'
-    }
-
-    if model_name not in urls:
-        raise ValueError(f"Unknown model {model_name}. Available: {list(urls.keys())}")
-
-    try:
-        # Use simple urllib to avoid heavy deps if possible, or torch.hub
-        import requests
-        response = requests.get(urls[model_name], stream=True)
-        response.raise_for_status()
-        
-        with open(dst_path, 'wb') as f:
-            for chunk in response.iter_content(chunk_size=8192):
-                f.write(chunk)
-                
-        print(f"Downloaded to {dst_path}")
-        return str(dst_path)
-    except Exception as e:
-        raise RuntimeError(f"Failed to download GFPGAN weights: {e}")
-
+    raise FileNotFoundError(
+        f"\n[ERROR] Missing GFPGAN weights.\n"
+        f"Expected to find the file here: {dst_path}\n"
+        f"Please extract the provided ArtRestoration_Weights.zip into your root directory."
+    )
 class GFPGANWrapper:
     def __init__(self, model_version='v1.3', device='cuda', upscale=1):
         """
@@ -86,7 +101,7 @@ class GFPGANWrapper:
             upscale=upscale,
             arch='clean',
             channel_multiplier=2,
-            bg_upsampler=None, # We use Real-ESRGAN separately
+            bg_upsampler=None, 
             device=device
         )
         print(f"Loaded GFPGAN: {name} | device={device}")
