@@ -8,9 +8,7 @@ A memory-optimized, multi-stage AI inference pipeline designed to sequentially r
 
 > **[Insert a massive side-by-side Before/After comparison image from your `assets` folder here]**
 
-```markdown
 ![Before and After](assets/final_masterpiece.png)
-```
 
 ---
 
