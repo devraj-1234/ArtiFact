@@ -6,8 +6,6 @@
 
 A memory-optimized, multi-stage AI inference pipeline designed to sequentially repair, color-correct, and upscale heavily degraded classical artwork on standard consumer hardware.
 
-> **[Insert a massive side-by-side Before/After comparison image from your `assets` folder here]**
-
 ![Before and After](assets/final_masterpiece.png)
 
 ---
@@ -105,7 +103,7 @@ Applies:
 ## 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/AI-Art-Restoration.git
+git clone https://github.com/devraj-1234/ArtiFact.git
 cd AI-Art-Restoration
 ```
 
