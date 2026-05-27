@@ -165,6 +165,7 @@ AI_Art_Restoration/
 ├── src/
 ├── final_inference.py
 └── README.md
+```
 
 ---
 
@@ -177,6 +178,13 @@ Place a damaged historical image inside the `assets/` folder and name it:
 ```text
 sample_damaged.jpg
 ```
+
+or
+
+```text
+sample_damaged.png
+```
+(must be `.png` format, if you want to restore `.jpg` format, change the code `final_inference.py` accordingly at line 27 or rename your file to `.png` format)
 
 ---
 
